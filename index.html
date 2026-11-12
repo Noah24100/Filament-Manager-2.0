@@ -1,0 +1,1305 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050608">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Filament">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon.svg">
+  <title>Filament Manager</title>
+
+  <style>
+    :root,
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #050608;
+      --surface: #101216;
+      --surface-2: #191c22;
+      --text: #f4f5f7;
+      --muted: #a0a5b0;
+      --line: #292d35;
+      --accent: #8b5cf6;
+      --accent-soft: #251b3b;
+      --danger: #ef4657;
+      --shadow: 0 8px 26px rgba(0, 0, 0, .4);
+    }
+
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg: #f4f6fb;
+      --surface: #fff;
+      --surface-2: #eef2f8;
+      --text: #192235;
+      --muted: #68758a;
+      --line: #e1e6ef;
+      --accent: #2864e8;
+      --accent-soft: #e8efff;
+      --danger: #cf3346;
+      --shadow: 0 8px 26px rgba(30, 48, 80, .08);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: max(12px, env(safe-area-inset-top)) 14px max(24px, env(safe-area-inset-bottom));
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .app { max-width: 1000px; margin: auto; }
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 4px 0 16px;
+    }
+    .brand { display: flex; align-items: center; gap: 11px; }
+    .brand img { width: 44px; height: 44px; border-radius: 14px; }
+    h1 { font-size: 1.35rem; margin: 0; letter-spacing: -.03em; }
+    .subtitle { color: var(--muted); font-size: .82rem; margin-top: 3px; }
+    .toolbar, .panel, .stat, .modal {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+    .toolbar { padding: 14px; display: flex; flex-wrap: wrap; gap: 9px; }
+    .search { flex: 1 1 210px; }
+    input, select, textarea {
+      width: 100%;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 11px 12px;
+      outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    input[type="color"] { min-height: 44px; padding: 5px; }
+    .btn {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 13px;
+      color: var(--text);
+      background: var(--surface-2);
+      font-weight: 650;
+    }
+    .btn.primary { color: white; background: var(--accent); border-color: var(--accent); }
+    .btn.danger { color: white; background: var(--danger); border-color: var(--danger); }
+    .btn.icon { width: 44px; padding: 0; font-size: 1.1rem; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0; }
+    .stat { padding: 12px; }
+    .stat small { display: block; color: var(--muted); font-size: .75rem; margin-bottom: 5px; }
+    .stat strong { font-size: 1.1rem; }
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .filters select { flex: 1; min-width: 130px; }
+    .low-toggle { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+    .low-toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
+    .layout { display: grid; grid-template-columns: 1.15fr .85fr; gap: 12px; }
+    .panel { overflow: hidden; }
+    .panel-title { padding: 14px 16px; border-bottom: 1px solid var(--line); font-weight: 750; }
+    #list { list-style: none; padding: 0; margin: 0; max-height: 58vh; overflow: auto; }
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      width: 100%;
+      text-align: left;
+      padding: 13px 15px;
+      color: var(--text);
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .row.selected { background: var(--accent-soft); }
+    .swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1px solid #8888;
+      flex: 0 0 auto;
+    }
+    .status-light {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      flex: 0 0 13px;
+      border: 1px solid #ffffff66;
+    }
+    .status-light.green {
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e99;
+    }
+    .status-light.yellow {
+      background: #facc15;
+      box-shadow: 0 0 8px #facc1588;
+    }
+    .status-light.red {
+      background: #ef4444;
+      box-shadow: 0 0 8px #ef444499;
+    }
+    .status-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 10px 15px;
+      color: var(--muted);
+      font-size: .78rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .status-legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .status-light.small { width: 10px; height: 10px; flex-basis: 10px; }
+    .row-info { min-width: 0; flex: 1; }
+    .row-title, .row-sub {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .row-title { font-weight: 700; }
+    .row-sub { color: var(--muted); font-size: .8rem; margin-top: 3px; }
+    .row-rest { text-align: right; white-space: nowrap; font-weight: 700; }
+    .row-rest small { display: block; color: var(--muted); font-weight: 400; }
+    .detail { padding: 16px; }
+    .detail h2 { font-size: 1.15rem; margin: 0 0 4px; }
+    .muted { color: var(--muted); }
+    .progress {
+      height: 8px;
+      background: var(--surface-2);
+      border-radius: 8px;
+      margin: 14px 0;
+      overflow: hidden;
+    }
+    .progress span { display: block; height: 100%; background: var(--accent); }
+    .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .detail-cell { background: var(--surface-2); border-radius: 11px; padding: 9px; overflow-wrap: anywhere; }
+    .detail-cell small { display: block; color: var(--muted); margin-bottom: 3px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .section { margin-top: 14px; }
+    .empty { color: var(--muted); padding: 24px 16px; text-align: center; }
+    .modal-wrap {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      background: #0008;
+      display: grid;
+      place-items: center;
+      padding: 14px;
+    }
+    .modal {
+      width: min(620px, 100%);
+      max-height: 90dvh;
+      overflow: auto;
+      padding: 16px;
+    }
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .modal-head h2 { font-size: 1.1rem; margin: 0; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .field label { display: block; color: var(--muted); font-size: .78rem; margin: 0 0 5px; }
+    .field.full { grid-column: 1 / -1; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+    .scan-box { margin-top: 8px; }
+    #reader { width: 100%; overflow: hidden; border-radius: 12px; }
+    .hidden { display: none !important; }
+    .job-list { list-style: none; padding: 0; margin: 0; }
+    .job-list li { padding: 12px 16px; border-bottom: 1px solid var(--line); }
+    .job-list li:last-child { border-bottom: 0; }
+    .job-meta, .hint { color: var(--muted); font-size: .82rem; margin-top: 5px; }
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      background: var(--bg);
+      transition: opacity .25s ease;
+    }
+    #splash img { width: 84px; border-radius: 24px; display: block; margin: 0 auto 12px; }
+    #splash strong { display: block; text-align: center; }
+    @media (max-width: 720px) {
+      .layout { grid-template-columns: 1fr; }
+      #list { max-height: 44vh; }
+    }
+    @media (max-width: 460px) {
+      .stats { grid-template-columns: 1fr 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .top { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div id="splash"><div><img src="./icon.svg" alt=""><strong>Filament Manager</strong></div></div>
+
+  <main class="app">
+    <header class="top">
+      <div class="brand">
+        <img src="./icon.svg" alt="">
+        <div><h1>Filament Manager</h1><div class="subtitle">Dein Filamentbestand</div></div>
+      </div>
+      <button class="btn icon" id="themeBtn" aria-label="Darstellung wechseln">◐</button>
+    </header>
+
+    <section class="stats">
+      <div class="stat"><small>Spulen</small><strong id="statCount">0</strong></div>
+      <div class="stat"><small>Restmenge</small><strong id="statGrams">0 g</strong></div>
+      <div class="stat"><small>Restwert</small><strong id="statValue">0 €</strong></div>
+      <div class="stat"><small>Fast leer</small><strong id="statLow">0</strong></div>
+    </section>
+
+    <section class="toolbar">
+      <input class="search" id="search" type="search" placeholder="Suchen: Marke, Farbe, Lagerort …">
+      <button class="btn" id="importBtn">CSV importieren</button>
+      <input id="csvFile" type="file" accept=".csv,text/csv" class="hidden">
+      <button class="btn" id="exportBtn">CSV exportieren</button>
+      <button class="btn" id="jobBtn">＋ Druckauftrag</button>
+      <button class="btn primary" id="newBtn">＋ Neue Spule</button>
+    </section>
+
+    <section class="filters">
+      <select id="brandFilter" aria-label="Marke filtern"></select>
+      <select id="materialFilter" aria-label="Material filtern"></select>
+      <select id="sort" aria-label="Sortierung">
+        <option value="brand">Marke</option>
+        <option value="material">Material</option>
+        <option value="colorName">Farbe</option>
+        <option value="remaining">Restmenge</option>
+        <option value="percent">Füllstand</option>
+      </select>
+      <label class="low-toggle"><input id="lowOnly" type="checkbox"> Fast leer</label>
+    </section>
+
+    <section class="layout">
+      <div class="panel">
+        <div class="panel-title">Spulen</div>
+        <div class="status-legend" aria-label="Füllstand-Ampel">
+          <span><i class="status-light small green"></i> Grün: über 50 %</span>
+          <span><i class="status-light small yellow"></i> Gelb: 10–50 %</span>
+          <span><i class="status-light small red"></i> Rot: unter 10 %</span>
+        </div>
+        <ul id="list"></ul>
+      </div>
+      <aside class="panel detail" id="detail">
+        <div class="empty">Noch keine Spule ausgewählt.</div>
+      </aside>
+    </section>
+
+    <section class="panel section">
+      <div class="panel-title">Druckaufträge</div>
+      <ul id="jobList" class="job-list"></ul>
+    </section>
+
+    <section class="panel section">
+      <div class="panel-title">Nachkauf-Liste</div>
+      <ul id="reorderList" class="job-list"></ul>
+    </section>
+  </main>
+
+  <div class="modal-wrap hidden" id="modalWrap">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <h2 id="modalTitle">Neue Spule</h2>
+        <button class="btn" type="button" id="closeModal">Schließen</button>
+      </div>
+
+      <form id="form">
+        <div class="form-grid">
+          <div class="field">
+            <label for="brandSelect">Marke *</label>
+            <select id="brandSelect"></select>
+            <input id="brandInput" class="hidden" type="text" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="materialSelect">Material *</label>
+            <select id="materialSelect"></select>
+            <input id="materialInput" class="hidden" type="text" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="colorSelect">Farbe</label>
+            <select id="colorSelect"></select>
+            <input id="colorName" class="hidden" type="text" placeholder="Eigene Farbe">
+          </div>
+          <div class="field">
+            <label for="colorHex">Farbvorschau / Farbcode</label>
+            <input id="colorHex" type="color" value="#b9c2d0">
+          </div>
+          <div class="field">
+            <label for="spoolWeight">Filament-Nettogewicht (g) *</label>
+            <input id="spoolWeight" type="number" min="1" step="1" required>
+          </div>
+          <div class="field">
+            <label for="totalWeight">Gesamtgewicht inkl. Spule (g)</label>
+            <input id="totalWeight" type="number" min="1" step="1">
+          </div>
+          <div class="field">
+            <label for="emptySpoolWeight">Leerspule (g, berechnet)</label>
+            <input id="emptySpoolWeight" type="number" readonly>
+          </div>
+          <div class="field">
+            <label for="locationSelect">Lagerort</label>
+            <select id="locationSelect">
+              <option value="Trocken Kiste">Trocken Kiste</option>
+              <option value="Regal">Regal</option>
+            </select>
+            <input id="location" class="hidden" type="text">
+          </div>
+          <div class="field"><label for="diameter">Durchmesser (mm)</label><input id="diameter" type="number" min=".1" step=".01"></div>
+          <div class="field"><label for="remaining">Rest (g)</label><input id="remaining" type="number" min="0" step="1"></div>
+          <div class="field"><label for="price">Preis (€)</label><input id="price" type="number" min="0" step=".01"></div>
+          <div class="field"><label for="purchased">Gekauft am</label><input id="purchased" type="date"></div>
+          <div class="field"><label for="nozzleTemp">Düse (°C)</label><input id="nozzleTemp"></div>
+          <div class="field"><label for="bedTemp">Bett (°C)</label><input id="bedTemp"></div>
+          <div class="field full">
+            <label for="code">Scan-Code (auch manuell eingeben)</label>
+            <input id="code" autocomplete="off" placeholder="Barcode/RFID-Code">
+            <div class="scan-box">
+              <button class="btn" type="button" id="scanBtn">Kamera öffnen und scannen</button>
+              <button class="btn hidden" type="button" id="stopScanBtn">Scan beenden</button>
+              <div id="reader" class="hidden"></div>
+            </div>
+          </div>
+          <div class="field full"><label for="notes">Notizen</label><textarea id="notes" rows="3"></textarea></div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn" id="cancelBtn">Abbrechen</button>
+          <button class="btn primary" type="submit">Speichern</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-wrap hidden" id="jobModalWrap">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="jobModalTitle">
+      <div class="modal-head">
+        <h2 id="jobModalTitle">Druckauftrag</h2>
+        <button class="btn" type="button" id="closeJobModal">Schließen</button>
+      </div>
+      <form id="jobForm">
+        <div class="form-grid">
+          <div class="field full">
+            <label for="jobName">Auftrag / Druckname *</label>
+            <input id="jobName" required placeholder="z. B. Gehäuse">
+          </div>
+          <div class="field full">
+            <label for="jobSpoolSearch">Filament suchen</label>
+            <input id="jobSpoolSearch" type="search" placeholder="Marke, Material, Farbe oder Lagerort …" autocomplete="off">
+          </div>
+          <div class="field full">
+            <label for="jobSpool">Filament aus der Bibliothek *</label>
+            <select id="jobSpool" required></select>
+            <div class="job-meta" id="jobAvailable"></div>
+          </div>
+          <div class="field full">
+            <label for="jobGrams">Verbrauch (g) *</label>
+            <input id="jobGrams" type="number" min="1" step="1" required>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn" id="cancelJobBtn">Abbrechen</button>
+          <button class="btn primary" type="submit">Auftrag anlegen &amp; Verbrauch abziehen</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script>
+    "use strict";
+
+    const KEY = "filament-manager-v3";
+    const JOB_KEY = "filament-manager-jobs-v1";
+    const REORDER_KEY = "filament-manager-reorder-v1";
+    const $ = id => document.getElementById(id);
+    const fields = [
+      "brand", "material", "colorName", "colorHex", "diameter", "spoolWeight",
+      "remaining", "price", "location", "purchased", "nozzleTemp", "bedTemp",
+      "code", "notes", "totalWeight", "emptySpoolWeight"
+    ];
+
+    const BRAND_MATERIALS = {
+      "Bambu Lab": ["PLA Basic", "PLA Matte", "PLA Silk+", "PLA Tough+", "PLA-CF", "PLA Glow", "PLA Aero", "PETG Basic", "PETG HF", "PETG-CF", "ABS", "ASA", "TPU 95A HF", "PA6-CF", "PAHT-CF", "PC", "Support for PLA", "Support for PETG", "Support for PA/PET", "Support for ABS"],
+      "Generic": ["PLA", "PLA+", "PLA Basic", "PLA Matte", "PLA Silk", "PLA-CF", "PETG", "PETG+", "PETG-CF", "ABS", "ASA", "TPU", "PA", "PA-CF", "PC", "PVA", "HIPS", "PVB"],
+      "Polymaker": ["PolyLite PLA", "PolyTerra PLA", "PolyMax PLA", "PLA-CF", "PolyLite PETG", "PolyMax PETG", "PolyLite ABS", "PolyLite ASA", "PolyFlex TPU 90A", "PolyFlex TPU 95A", "PolyMide PA6-CF", "PolyMide PA6-GF", "PolyMide PA12-CF", "PolyLite PC", "PolySupport", "PolyDissolve S1"],
+      "Overture": ["PLA", "PLA+", "PLA Pro", "PLA Matte", "PLA Silk", "PLA-CF", "PETG", "PETG+", "PETG-CF", "TPU", "TPU 95A", "ABS", "ASA", "Nylon"],
+      "eSUN": ["PLA", "PLA+", "PLA-HS", "PLA-ST", "PLA Matte", "PLA Silk", "PLA-CF", "PETG", "PETG+", "PETG-CF", "ABS+", "ASA", "TPU", "eTPU", "PA", "PA-CF", "PC", "PVA", "HIPS"],
+      "SUNLU": ["PLA", "PLA+", "PLA Meta", "PLA Matte", "PLA Silk", "PLA-CF", "PETG", "PETG+", "PETG-CF", "ABS", "ASA", "TPU", "PA", "PA-CF", "PC", "PVB"],
+      "Elegoo": ["PLA", "PLA+", "Rapid PLA+", "PLA Matte", "PLA Silk", "PLA-CF", "PETG", "PETG+", "Rapid PETG", "ABS", "TPU"]
+    };
+
+    const TEMPERATURE_PROFILES = {
+      "Bambu Lab": { PLA: { nozzle: "190–230", bed: "35–65" }, PETG: { nozzle: "230–260", bed: "65–75" }, TPU: { nozzle: "220–240", bed: "30–45" }, engineering: { nozzle: "250–290", bed: "80–110" }, support: { nozzle: "190–220", bed: "35–60" } },
+      "Generic": { PLA: { nozzle: "190–220", bed: "45–60" }, PETG: { nozzle: "230–250", bed: "70–85" }, TPU: { nozzle: "210–230", bed: "30–50" }, engineering: { nozzle: "240–270", bed: "80–110" }, support: { nozzle: "190–220", bed: "45–60" } },
+      "Polymaker": { PLA: { nozzle: "190–220", bed: "25–60" }, PETG: { nozzle: "230–250", bed: "70–80" }, TPU: { nozzle: "210–230", bed: "25–50" }, engineering: { nozzle: "240–280", bed: "70–110" }, support: { nozzle: "190–220", bed: "25–60" } },
+      "Overture": { PLA: { nozzle: "190–220", bed: "50–60" }, PETG: { nozzle: "230–250", bed: "70–85" }, TPU: { nozzle: "210–230", bed: "30–50" }, engineering: { nozzle: "240–270", bed: "80–110" }, support: { nozzle: "190–220", bed: "45–60" } },
+      "eSUN": { PLA: { nozzle: "190–220", bed: "45–60" }, PETG: { nozzle: "230–250", bed: "70–80" }, TPU: { nozzle: "210–230", bed: "30–50" }, engineering: { nozzle: "240–280", bed: "80–110" }, support: { nozzle: "190–220", bed: "45–60" } },
+      "SUNLU": { PLA: { nozzle: "200–220", bed: "50–60" }, PETG: { nozzle: "230–250", bed: "70–80" }, TPU: { nozzle: "210–230", bed: "30–50" }, engineering: { nozzle: "240–280", bed: "80–110" }, support: { nozzle: "190–220", bed: "45–60" } },
+      "Elegoo": { PLA: { nozzle: "190–220", bed: "50–60" }, PETG: { nozzle: "230–250", bed: "70–80" }, TPU: { nozzle: "210–230", bed: "30–50" }, engineering: { nozzle: "240–270", bed: "80–110" }, support: { nozzle: "190–220", bed: "45–60" } }
+    };
+
+    const COLOR_NAMES = {
+      white: ["Weiß", "#f4f3ee"], black: ["Schwarz", "#202126"], gray: ["Grau", "#858991"],
+      silver: ["Silber", "#b8bec8"], red: ["Rot", "#cf2838"], orange: ["Orange", "#f07827"],
+      yellow: ["Gelb", "#f3d44b"], green: ["Grün", "#218b58"], blue: ["Blau", "#2766c7"],
+      cyan: ["Cyan", "#31b9c5"], purple: ["Lila", "#8046a8"], pink: ["Rosa", "#e786ad"],
+      brown: ["Braun", "#79513b"], beige: ["Beige", "#d4bd91"], natural: ["Natur / Transparent", "#e6dfc9"],
+      gold: ["Gold", "#d1a739"], rainbow: ["Regenbogen / Multicolor", "#8d69c5"],
+      transparent: ["Transparent", "#dce8e7"]
+    };
+
+    const PALETTES = {
+      PLA: ["white", "black", "gray", "silver", "red", "orange", "yellow", "green", "blue", "cyan", "purple", "pink", "brown", "beige", "gold", "rainbow"],
+      PETG: ["white", "black", "gray", "red", "orange", "yellow", "green", "blue", "cyan", "purple", "pink", "brown", "transparent"],
+      TPU: ["white", "black", "gray", "red", "orange", "yellow", "green", "blue"],
+      engineering: ["white", "black", "gray", "natural"],
+      support: ["white", "natural"]
+    };
+
+    let items = loadItems();
+    let jobs = loadJobs();
+    let reorderItems = loadReorderItems();
+    let selectedId = null;
+    let editingId = null;
+    let scanner = null;
+
+    function loadItems() {
+      try {
+        const value = JSON.parse(localStorage.getItem(KEY) || "[]");
+        return Array.isArray(value) ? value : [];
+      } catch { return []; }
+    }
+    function loadJobs() {
+      try {
+        const value = JSON.parse(localStorage.getItem(JOB_KEY) || "[]");
+        return Array.isArray(value) ? value : [];
+      } catch { return []; }
+    }
+    function loadReorderItems() {
+      try {
+        const value = JSON.parse(localStorage.getItem(REORDER_KEY) || "[]");
+        return Array.isArray(value) ? value : [];
+      } catch { return []; }
+    }
+
+    function save() { localStorage.setItem(KEY, JSON.stringify(items)); }
+    function saveJobs() { localStorage.setItem(JOB_KEY, JSON.stringify(jobs)); }
+    function saveReorderItems() { localStorage.setItem(REORDER_KEY, JSON.stringify(reorderItems)); }
+    function uid() { return crypto.randomUUID?.() || `id-${Date.now()}-${Math.random()}`; }
+    function today() { return new Date().toISOString().slice(0, 10); }
+    function num(value, fallback = 0) {
+      const result = Number(String(value ?? "").replace(",", "."));
+      return Number.isFinite(result) ? result : fallback;
+    }
+    function codeNorm(value) { return String(value || "").replace(/[\s:-]/g, "").toUpperCase(); }
+    function normalizeColor(value) {
+      const text = String(value || "").trim();
+      const hex = text.startsWith("#") ? text : `#${text}`;
+      return /^#[0-9a-f]{6}$/i.test(hex) ? hex : "#b9c2d0";
+    }
+    function pct(item) {
+      return item.spoolWeight > 0
+        ? Math.max(0, Math.min(100, item.remaining / item.spoolWeight * 100))
+        : 0;
+    }
+    function statusFor(item) {
+      const percent = pct(item);
+      if (percent < 10) return { color: "red", label: "Rot – weniger als 10 % Restmaterial" };
+      if (percent <= 50) return { color: "yellow", label: "Gelb – 10 bis 50 % Restmaterial" };
+      return { color: "green", label: "Grün – mehr als 50 % Restmaterial" };
+    }
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, character =>
+        ({"&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"}[character])
+      );
+    }
+    function current() { return items.find(item => item.id === selectedId); }
+    function materialFamily(material) {
+      const value = String(material || "").toLowerCase();
+      if (/support|pva|dissolv/.test(value)) return "support";
+      if (/pla/.test(value)) return "PLA";
+      if (/petg/.test(value)) return "PETG";
+      if (/tpu|etpu/.test(value)) return "TPU";
+      if (/abs|asa|pa|nylon|pc|hips/.test(value)) return "engineering";
+      return "PLA";
+    }
+    function updateRecommendedTemps() {
+      if (editingId) return;
+      const brand = $("brandSelect").value;
+      const material = $("materialSelect").value;
+      if (!brand || !material) return;
+      const profile = TEMPERATURE_PROFILES[brand]?.[materialFamily(material)]
+        || TEMPERATURE_PROFILES.Generic[materialFamily(material)];
+      if (profile) {
+        $("nozzleTemp").value = profile.nozzle;
+        $("bedTemp").value = profile.bed;
+      }
+    }
+    function updateEmptySpoolWeight() {
+      const total = num($("totalWeight").value, NaN);
+      const filament = num($("spoolWeight").value, NaN);
+      $("emptySpoolWeight").value =
+        Number.isFinite(total) && Number.isFinite(filament) && total >= filament
+          ? (total - filament).toFixed(1)
+          : "";
+    }
+    function addToReorderList(item) {
+      if (!item || Number(item.remaining) > 0 || reorderItems.some(entry => entry.spoolId === item.id)) return;
+      reorderItems.push({
+        spoolId: item.id, brand: item.brand, material: item.material,
+        colorName: item.colorName || "", location: item.location || ""
+      });
+      saveReorderItems();
+      renderReorderList();
+    }
+    function syncReorderList() {
+      const ids = new Set(items.map(item => item.id));
+      reorderItems = reorderItems.filter(entry => ids.has(entry.spoolId));
+      items.filter(item => Number(item.remaining) <= 0).forEach(addToReorderList);
+      saveReorderItems();
+    }
+    function renderReorderList() {
+      const list = $("reorderList");
+      list.replaceChildren();
+      if (!reorderItems.length) {
+        const empty = document.createElement("li");
+        empty.className = "empty";
+        empty.textContent = "Noch keine leeren Spulen auf der Nachkauf-Liste.";
+        list.append(empty);
+        return;
+      }
+      for (const entry of reorderItems) {
+        const li = document.createElement("li");
+        const title = document.createElement("strong");
+        title.textContent = `${entry.brand} · ${entry.material}`;
+        const meta = document.createElement("div");
+        meta.className = "job-meta";
+        meta.textContent = [entry.colorName, entry.location ? `Lagerort: ${entry.location}` : ""]
+          .filter(Boolean).join(" · ") || "Spule leer";
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "btn";
+        remove.textContent = "Entfernen";
+        remove.addEventListener("click", () => {
+          reorderItems = reorderItems.filter(row => row.spoolId !== entry.spoolId);
+          saveReorderItems();
+          renderReorderList();
+        });
+        li.append(title, meta, remove);
+        list.append(li);
+      }
+    }
+    function colorOptionsFor(brand, material) {
+      const keys = PALETTES[materialFamily(material)] || PALETTES.PLA;
+      return keys.map(key => ({ name: COLOR_NAMES[key][0], hex: COLOR_NAMES[key][1] }));
+    }
+    function populateBrandSelect(selected = "") {
+      const select = $("brandSelect");
+      const brands = Object.keys(BRAND_MATERIALS).sort((a, b) => a.localeCompare(b, "de"));
+      select.replaceChildren();
+      brands.forEach(brand => {
+        const option = document.createElement("option");
+        option.value = brand;
+        option.textContent = brand;
+        select.append(option);
+      });
+      select.value = brands.includes(selected) ? selected : (brands[0] || "");
+    }
+    function populateMaterialSelect(brand, selected = "") {
+      const select = $("materialSelect");
+      const materials = BRAND_MATERIALS[brand] || [];
+      select.replaceChildren();
+      materials.forEach(material => {
+        const option = document.createElement("option");
+        option.value = material;
+        option.textContent = material;
+        select.append(option);
+      });
+      select.disabled = !materials.length;
+      if (materials.length) select.value = materials.includes(selected) ? selected : materials[0];
+    }
+    function populateColorSelect(brand, material) {
+      const select = $("colorSelect");
+      const options = colorOptionsFor(brand, material);
+      select.replaceChildren();
+      options.forEach(entry => {
+        const option = document.createElement("option");
+        option.value = entry.name;
+        option.textContent = entry.name;
+        option.dataset.hex = entry.hex;
+        select.append(option);
+      });
+      const custom = document.createElement("option");
+      custom.value = "__custom__";
+      custom.textContent = "Andere Farbe eingeben …";
+      select.append(custom);
+      select.value = options[0]?.name || "__custom__";
+      const chosen = select.selectedOptions[0];
+      const isCustom = chosen?.value === "__custom__";
+      $("colorName").classList.toggle("hidden", !isCustom);
+      if (!isCustom) {
+        $("colorName").value = "";
+        $("colorHex").value = chosen?.dataset.hex || "#b9c2d0";
+      }
+    }
+    function setLocation(value) {
+      const select = $("locationSelect");
+      if (value && ![...select.options].some(option => option.value === value)) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        select.append(option);
+      }
+      select.value = value || "Trocken Kiste";
+    }
+    function openForm(item = null) {
+      editingId = item?.id || null;
+      const isNew = !item;
+      $("modalTitle").textContent = isNew ? "Neue Spule" : "Spule bearbeiten";
+
+      $("brandSelect").classList.toggle("hidden", !isNew);
+      $("materialSelect").classList.toggle("hidden", !isNew);
+      $("colorSelect").classList.toggle("hidden", !isNew);
+      $("brandInput").classList.toggle("hidden", isNew);
+      $("materialInput").classList.toggle("hidden", isNew);
+      $("locationSelect").classList.remove("hidden");
+      $("location").classList.add("hidden");
+
+      if (isNew) {
+        $("colorName").classList.add("hidden");
+        populateBrandSelect();
+        populateMaterialSelect($("brandSelect").value);
+        populateColorSelect($("brandSelect").value, $("materialSelect").value);
+        setLocation("Trocken Kiste");
+        $("diameter").value = 1.75;
+        $("spoolWeight").value = 1000;
+        $("totalWeight").value = 1250;
+        updateEmptySpoolWeight();
+        $("remaining").value = 1000;
+        $("price").value = 0;
+        $("purchased").value = today();
+        $("nozzleTemp").value = "";
+        $("bedTemp").value = "";
+        $("code").value = "";
+        $("notes").value = "";
+        updateRecommendedTemps();
+      } else {
+        $("colorName").classList.remove("hidden");
+        $("brandInput").value = item.brand || "";
+        $("materialInput").value = item.material || "";
+        $("colorName").value = item.colorName || "";
+        $("colorHex").value = normalizeColor(item.colorHex);
+        $("diameter").value = item.diameter ?? 1.75;
+        $("spoolWeight").value = item.spoolWeight ?? 1000;
+        $("totalWeight").value = item.totalWeight ?? "";
+        $("emptySpoolWeight").value = item.emptySpoolWeight ?? "";
+        updateEmptySpoolWeight();
+        $("remaining").value = item.remaining ?? 0;
+        $("price").value = item.price ?? 0;
+        $("purchased").value = item.purchased || "";
+        $("nozzleTemp").value = item.nozzleTemp || "";
+        $("bedTemp").value = item.bedTemp || "";
+        setLocation(item.location || "Trocken Kiste");
+        $("code").value = item.code || "";
+        $("notes").value = item.notes || "";
+      }
+      $("modalWrap").classList.remove("hidden");
+    }
+    async function stopCamera() {
+      if (scanner) {
+        try { await scanner.stop(); } catch {}
+        try { await scanner.clear(); } catch {}
+        scanner = null;
+      }
+      $("reader").classList.add("hidden");
+      $("stopScanBtn").classList.add("hidden");
+    }
+    function closeForm() {
+      stopCamera();
+      $("modalWrap").classList.add("hidden");
+    }
+    function renderJobSpools() {
+      const query = $("jobSpoolSearch").value.trim().toLocaleLowerCase();
+      const select = $("jobSpool");
+      const previous = select.value;
+      const matching = items.filter(item =>
+        [item.brand, item.material, item.colorName, item.location, item.code]
+          .join(" ").toLocaleLowerCase().includes(query)
+      );
+      select.replaceChildren();
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = matching.length ? "Spule auswählen …" : "Keine passende Spule gefunden";
+      placeholder.disabled = true;
+      select.append(placeholder);
+      matching.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item.id;
+        option.textContent = `${item.brand} · ${item.material} · ${item.colorName || "Ohne Farbe"} · ${Math.round(item.remaining)} g`;
+        select.append(option);
+      });
+      if (matching.some(item => item.id === previous)) select.value = previous;
+      else if (matching.length) select.value = matching[0].id;
+      updateJobAvailable();
+    }
+    function openJobForm() {
+      $("jobName").value = "";
+      $("jobGrams").value = "";
+      $("jobSpoolSearch").value = "";
+      renderJobSpools();
+      $("jobModalWrap").classList.remove("hidden");
+    }
+    function closeJobForm() { $("jobModalWrap").classList.add("hidden"); }
+    function updateJobAvailable() {
+      const item = items.find(row => row.id === $("jobSpool").value);
+      $("jobAvailable").textContent = item
+        ? `Verfügbar: ${Math.round(item.remaining)} g`
+        : (items.length ? "Bitte eine Spule auswählen." : "Lege zuerst eine Spule in der Bibliothek an.");
+    }
+    function renderJobs() {
+      const list = $("jobList");
+      list.replaceChildren();
+      if (!jobs.length) {
+        const empty = document.createElement("li");
+        empty.className = "empty";
+        empty.textContent = "Noch keine Druckaufträge angelegt.";
+        list.append(empty);
+        return;
+      }
+      [...jobs].reverse().forEach(job => {
+        const li = document.createElement("li");
+        const title = document.createElement("strong");
+        title.textContent = job.name;
+        const meta = document.createElement("div");
+        meta.className = "job-meta";
+        const date = job.createdAt ? new Date(job.createdAt).toLocaleString("de-DE") : "";
+        meta.textContent = `${job.spoolLabel} · ${job.grams} g verbraucht${date ? ` · ${date}` : ""}`;
+        li.append(title, meta);
+        list.append(li);
+      });
+    }
+    function setOptions(select, values, selected) {
+      const options = ["Alle", ...new Set(values.filter(Boolean))].sort((a, b) =>
+        a === "Alle" ? -1 : b === "Alle" ? 1 : a.localeCompare(b, "de")
+      );
+      select.replaceChildren(...options.map(value => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        return option;
+      }));
+      select.value = options.includes(selected) ? selected : "Alle";
+    }
+    function filtered() {
+      const query = $("search").value.trim().toLocaleLowerCase();
+      const result = items.filter(item =>
+        ($("brandFilter").value === "Alle" || item.brand === $("brandFilter").value) &&
+        ($("materialFilter").value === "Alle" || item.material === $("materialFilter").value) &&
+        (!$("lowOnly").checked || pct(item) <= 20) &&
+        (!query || fields.map(key => item[key] ?? "").join(" ").toLocaleLowerCase().includes(query))
+      );
+      const sort = $("sort").value;
+      result.sort((a, b) =>
+        sort === "remaining" ? b.remaining - a.remaining :
+        sort === "percent" ? pct(b) - pct(a) :
+        String(a[sort] || "").localeCompare(String(b[sort] || ""), "de", { numeric: true })
+      );
+      return result;
+    }
+    function render() {
+      const oldBrand = $("brandFilter").value || "Alle";
+      const oldMaterial = $("materialFilter").value || "Alle";
+      setOptions($("brandFilter"), items.map(item => item.brand), oldBrand);
+      setOptions($("materialFilter"), items.map(item => item.material), oldMaterial);
+
+      const grams = items.reduce((sum, item) => sum + num(item.remaining), 0);
+      const value = items.reduce((sum, item) =>
+        sum + (item.spoolWeight > 0 ? item.price * item.remaining / item.spoolWeight : 0), 0
+      );
+      $("statCount").textContent = items.length;
+      $("statGrams").textContent = `${Math.round(grams)} g`;
+      $("statValue").textContent = `${value.toFixed(2)} €`;
+      $("statLow").textContent = items.filter(item => pct(item) <= 20).length;
+
+      const shown = filtered();
+      if (!shown.some(item => item.id === selectedId)) selectedId = shown[0]?.id || null;
+      const list = $("list");
+      list.replaceChildren();
+
+      if (!shown.length) {
+        const empty = document.createElement("li");
+        empty.className = "empty";
+        empty.textContent = items.length ? "Keine passenden Spulen gefunden." : "Lege deine erste Spule an.";
+        list.append(empty);
+      }
+
+      shown.forEach(item => {
+        const li = document.createElement("li");
+        const button = document.createElement("button");
+        const status = statusFor(item);
+        button.className = `row${item.id === selectedId ? " selected" : ""}`;
+        button.type = "button";
+        button.innerHTML = `
+          <span class="status-light ${status.color}" title="${status.label}" aria-label="${status.label}"></span>
+          <span class="swatch" style="background:${normalizeColor(item.colorHex)}"></span>
+          <span class="row-info">
+            <span class="row-title">${esc(item.brand)} · ${esc(item.material)}</span>
+            <span class="row-sub">${esc(item.colorName || "Ohne Farbe")} · ${esc(item.location || "Kein Lagerort")}</span>
+          </span>
+          <span class="row-rest">${Math.round(item.remaining)} g<small>${Math.round(pct(item))} %</small></span>`;
+        button.addEventListener("click", () => {
+          selectedId = item.id;
+          render();
+        });
+        li.append(button);
+        list.append(li);
+      });
+
+      renderDetail();
+      renderJobs();
+      renderReorderList();
+    }
+    function cell(label, value) {
+      return `<div class="detail-cell"><small>${label}</small>${value}</div>`;
+    }
+    function renderDetail() {
+      const item = current();
+      const box = $("detail");
+      if (!item) {
+        box.innerHTML = '<div class="empty">Keine Spule ausgewählt.</div>';
+        return;
+      }
+      const emptyWeight = Number.isFinite(Number(item.emptySpoolWeight))
+        ? `${Number(item.emptySpoolWeight).toFixed(1)} g`
+        : "Nicht eingetragen";
+
+      box.innerHTML = `
+        <h2>${esc(item.brand)} ${esc(item.material)}</h2>
+        <div class="muted">${esc(item.colorName || "Ohne Farbangabe")} · ${esc(item.location || "Kein Lagerort")}</div>
+        <div class="progress"><span style="width:${pct(item)}%"></span></div>
+        <div class="details-grid">
+          ${cell("Rest", `${Math.round(item.remaining)} g von ${Math.round(item.spoolWeight)} g`)}
+          ${cell("Füllstand", `${Math.round(pct(item))} %`)}
+          ${cell("Durchmesser", `${esc(item.diameter)} mm`)}
+          ${cell("Preis", `${num(item.price).toFixed(2)} €`)}
+          ${cell("Leerspule", emptyWeight)}
+          ${cell("Gesamtgewicht", item.totalWeight ? `${esc(item.totalWeight)} g` : "Nicht eingetragen")}
+          ${cell("Gekauft", esc(item.purchased || "—"))}
+          ${cell("Düse / Bett", `${esc(item.nozzleTemp || "—")} / ${esc(item.bedTemp || "—")} °C`)}
+          ${cell("Scan-Code", esc(item.code || "—"))}
+        </div>
+        ${item.notes ? `<p class="muted">${esc(item.notes)}</p>` : ""}
+        <div class="actions">
+          <button class="btn" data-action="consume">Verbrauch</button>
+          <button class="btn" data-action="weigh">Gewicht abgleichen</button>
+          <button class="btn" data-action="duplicate">Nachkaufen</button>
+          <button class="btn" data-action="edit">Bearbeiten</button>
+          <button class="btn danger" data-action="delete">Löschen</button>
+        </div>`;
+      box.querySelectorAll("[data-action]").forEach(button =>
+        button.addEventListener("click", () => action(button.dataset.action))
+      );
+    }
+    function action(name) {
+      const item = current();
+      if (!item) return;
+
+      if (name === "edit") openForm(item);
+
+      if (name === "delete" && confirm(`„${item.brand} ${item.material}“ löschen?`)) {
+        items = items.filter(entry => entry.id !== item.id);
+        reorderItems = reorderItems.filter(entry => entry.spoolId !== item.id);
+        save();
+        saveReorderItems();
+        selectedId = null;
+        render();
+      }
+
+      if (name === "duplicate") {
+        const copy = { ...item, id: uid(), remaining: item.spoolWeight, purchased: today(), code: "" };
+        items.push(copy);
+        selectedId = copy.id;
+        save();
+        render();
+      }
+
+      if (name === "weigh") {
+        const tare = Number.isFinite(Number(item.emptySpoolWeight))
+          ? Number(item.emptySpoolWeight)
+          : (Number.isFinite(Number(item.totalWeight)) &&
+             Number(item.totalWeight) >= Number(item.spoolWeight)
+              ? Number(item.totalWeight) - Number(item.spoolWeight)
+              : null);
+
+        if (tare === null || tare < 0) {
+          return alert("Das Leerspulengewicht ist nicht bekannt. Bitte im Bearbeiten-Fenster Gesamtgewicht und Filament-Nettogewicht eintragen.");
+        }
+
+        const oldRemaining = Number(item.remaining) || 0;
+        const answer = prompt(
+          "Aktuelles Gesamtgewicht der Spule in Gramm eingeben (inklusive Leerspule):",
+          (oldRemaining + tare).toFixed(1)
+        );
+        if (answer === null) return;
+
+        const measuredGross = num(answer, NaN);
+        if (!Number.isFinite(measuredGross) || measuredGross < tare) {
+          return alert(`Bitte ein gültiges Gewicht von mindestens ${tare.toFixed(1)} g eingeben.`);
+        }
+
+        const newRemaining = measuredGross - tare;
+        if (newRemaining > Number(item.spoolWeight)) {
+          return alert(`Das Gewicht ergibt ${newRemaining.toFixed(1)} g Filament; eingetragen sind aber nur ${item.spoolWeight} g.`);
+        }
+
+        const consumed = Math.max(0, oldRemaining - newRemaining);
+        item.remaining = newRemaining;
+        item.totalWeight = measuredGross;
+        item.emptySpoolWeight = tare;
+
+        if (newRemaining <= 0) addToReorderList(item);
+        else {
+          reorderItems = reorderItems.filter(entry => entry.spoolId !== item.id);
+          saveReorderItems();
+        }
+
+        save();
+        render();
+        alert(consumed > 0
+          ? `Gewicht aktualisiert. Seit dem letzten Eintrag wurden ${consumed.toFixed(1)} g verbraucht. Neuer Rest: ${newRemaining.toFixed(1)} g.`
+          : `Gewicht aktualisiert. Neuer Rest: ${newRemaining.toFixed(1)} g.`);
+      }
+
+      if (name === "consume") {
+        const answer = prompt("Verbrauch in Gramm:", "");
+        if (answer === null) return;
+        const grams = num(answer, NaN);
+        if (!Number.isFinite(grams) || grams <= 0) return alert("Bitte eine gültige Grammzahl eingeben.");
+        item.remaining = Math.max(0, item.remaining - grams);
+        addToReorderList(item);
+        save();
+        render();
+      }
+    }
+    async function startCamera() {
+      if (!window.isSecureContext) {
+        alert("Für den Kamera-Scan muss die App über HTTPS geöffnet werden.");
+        return;
+      }
+      if (!window.Html5Qrcode) {
+        alert("Der Scanner konnte nicht geladen werden. Bitte Netzwerkverbindung prüfen oder den Code manuell eingeben.");
+        return;
+      }
+      $("reader").classList.remove("hidden");
+      $("stopScanBtn").classList.remove("hidden");
+      scanner = new Html5Qrcode("reader");
+      try {
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 240, height: 160 } },
+          async result => {
+            $("code").value = codeNorm(result);
+            await stopCamera();
+          },
+          () => {}
+        );
+      } catch {
+        await stopCamera();
+        alert("Kamerazugriff nicht möglich. Erlaube dem Browser den Kamerazugriff oder gib den Code manuell ein.");
+      }
+    }
+
+    $("form").addEventListener("submit", event => {
+      event.preventDefault();
+      const isNew = !editingId;
+      const brand = isNew ? $("brandSelect").value.trim() : $("brandInput").value.trim();
+      const material = isNew ? $("materialSelect").value.trim() : $("materialInput").value.trim();
+      const location = $("locationSelect").value.trim();
+      const colorOption = isNew ? $("colorSelect").selectedOptions[0] : null;
+      const colorName = isNew
+        ? (colorOption?.value === "__custom__" ? $("colorName").value.trim() : (colorOption?.value || ""))
+        : $("colorName").value.trim();
+
+      const spoolWeight = num($("spoolWeight").value, NaN);
+      const totalText = $("totalWeight").value.trim();
+      const totalWeight = totalText ? num(totalText, NaN) : null;
+
+      if (!brand || !material) return alert("Marke und Material sind Pflichtfelder.");
+      if (isNew && colorOption?.value === "__custom__" && !colorName) return alert("Bitte eine eigene Farbe eingeben.");
+      if (!Number.isFinite(spoolWeight) || spoolWeight <= 0) return alert("Das Filament-Nettogewicht muss größer als 0 sein.");
+      if (totalWeight !== null && (!Number.isFinite(totalWeight) || totalWeight < spoolWeight)) {
+        return alert("Das Gesamtgewicht muss mindestens so groß wie das Filament-Nettogewicht sein.");
+      }
+
+      const remaining = num($("remaining").value, spoolWeight);
+      if (remaining < 0 || remaining > spoolWeight) return alert("Restmenge muss zwischen 0 und dem Filament-Nettogewicht liegen.");
+
+      const item = {
+        id: editingId || uid(),
+        brand,
+        material,
+        colorName,
+        colorHex: normalizeColor($("colorHex").value),
+        diameter: num($("diameter").value, 1.75),
+        spoolWeight,
+        totalWeight,
+        emptySpoolWeight: totalWeight === null ? null : totalWeight - spoolWeight,
+        remaining,
+        price: num($("price").value, 0),
+        location,
+        purchased: $("purchased").value,
+        nozzleTemp: $("nozzleTemp").value.trim(),
+        bedTemp: $("bedTemp").value.trim(),
+        code: codeNorm($("code").value),
+        notes: $("notes").value.trim()
+      };
+
+      if (item.price < 0 || item.diameter <= 0) return alert("Preis darf nicht negativ und Durchmesser muss größer als 0 sein.");
+      if (item.code && items.some(entry => entry.code === item.code && entry.id !== item.id)) return alert("Dieser Scan-Code ist bereits vergeben.");
+
+      const index = items.findIndex(entry => entry.id === item.id);
+      if (index < 0) items.push(item);
+      else items[index] = item;
+
+      selectedId = item.id;
+      save();
+      addToReorderList(item);
+      closeForm();
+      render();
+    });
+
+    $("jobForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const item = items.find(entry => entry.id === $("jobSpool").value);
+      const grams = num($("jobGrams").value, NaN);
+      const name = $("jobName").value.trim();
+
+      if (!item) return alert("Bitte eine Spule aus der Bibliothek auswählen.");
+      if (!name) return alert("Bitte einen Namen für den Druckauftrag eingeben.");
+      if (!Number.isFinite(grams) || grams <= 0) return alert("Bitte einen gültigen Verbrauch in Gramm eingeben.");
+      if (grams > item.remaining) return alert(`Nicht genug Filament vorhanden. Verfügbar sind ${Math.round(item.remaining)} g.`);
+
+      item.remaining = Math.max(0, item.remaining - grams);
+      addToReorderList(item);
+      jobs.push({
+        id: uid(),
+        name,
+        spoolId: item.id,
+        spoolLabel: `${item.brand} · ${item.material} · ${item.colorName || "Ohne Farbe"}`,
+        grams,
+        createdAt: new Date().toISOString()
+      });
+      save();
+      saveJobs();
+      closeJobForm();
+      render();
+    });
+
+    function parseCSV(text) {
+      text = text.replace(/^\uFEFF/, "");
+      const firstLine = text.split(/\r?\n/, 1)[0];
+      const delimiter = (firstLine.match(/;/g) || []).length >= (firstLine.match(/,/g) || []).length ? ";" : ",";
+      const rows = [];
+      let row = [], value = "", quoted = false;
+
+      for (let i = 0; i < text.length; i++) {
+        const character = text[i];
+        if (character === '"' && quoted && text[i + 1] === '"') {
+          value += '"'; i++;
+        } else if (character === '"') {
+          quoted = !quoted;
+        } else if (character === delimiter && !quoted) {
+          row.push(value); value = "";
+        } else if ((character === "\n" || character === "\r") && !quoted) {
+          if (character === "\r" && text[i + 1] === "\n") i++;
+          row.push(value); rows.push(row); row = []; value = "";
+        } else value += character;
+      }
+      if (value || row.length) { row.push(value); rows.push(row); }
+      return rows;
+    }
+
+    const headerAliases = {
+      "marke": "brand", "brand": "brand", "material": "material",
+      "farbe": "colorName", "color": "colorName", "farbcode": "colorHex", "colorhex": "colorHex",
+      "durchmesser (mm)": "diameter", "durchmesser": "diameter", "diameter": "diameter",
+      "filament-nettogewicht (g)": "spoolWeight", "spulengewicht (g)": "spoolWeight",
+      "spulengewicht": "spoolWeight", "spoolweight": "spoolWeight",
+      "gesamtgewicht inkl. spule (g)": "totalWeight", "gesamtgewicht": "totalWeight", "totalweight": "totalWeight",
+      "rest (g)": "remaining", "rest": "remaining", "remaining": "remaining",
+      "preis (€)": "price", "preis": "price", "price": "price",
+      "lagerort": "location", "location": "location", "gekauft am": "purchased", "gekauftam": "purchased",
+      "purchased": "purchased", "düse (°c)": "nozzleTemp", "düse": "nozzleTemp",
+      "nozzle_temp": "nozzleTemp", "bett (°c)": "bedTemp", "bett": "bedTemp", "bed_temp": "bedTemp",
+      "scan-code": "code", "code": "code", "notizen": "notes", "notes": "notes"
+    };
+
+    function importCSV(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const rows = parseCSV(String(reader.result || ""));
+          if (rows.length < 2) throw new Error("Die CSV enthält keine Datenzeilen.");
+          const headers = rows.shift().map(header => headerAliases[header.trim().toLowerCase()]);
+          let added = 0, skipped = 0;
+
+          for (const row of rows) {
+            if (!row.some(value => value.trim())) continue;
+            const raw = {};
+            headers.forEach((key, index) => { if (key) raw[key] = row[index] ?? ""; });
+            if (!raw.brand?.trim() || !raw.material?.trim()) { skipped++; continue; }
+
+            const weight = num(raw.spoolWeight, 1000);
+            const totalText = String(raw.totalWeight || "").trim();
+            const totalWeight = totalText ? num(totalText, NaN) : null;
+            const item = {
+              id: uid(),
+              brand: raw.brand.trim(),
+              material: raw.material.trim(),
+              colorName: raw.colorName || "",
+              colorHex: normalizeColor(raw.colorHex),
+              diameter: num(raw.diameter, 1.75),
+              spoolWeight: weight,
+              totalWeight,
+              emptySpoolWeight: totalWeight === null ? null : totalWeight - weight,
+              remaining: num(raw.remaining, weight),
+              price: num(raw.price, 0),
+              location: raw.location || "Trocken Kiste",
+              purchased: raw.purchased || "",
+              nozzleTemp: raw.nozzleTemp || "",
+              bedTemp: raw.bedTemp || "",
+              code: codeNorm(raw.code),
+              notes: raw.notes || ""
+            };
+
+            if (weight <= 0 || (totalWeight !== null && (!Number.isFinite(totalWeight) || totalWeight < weight)) ||
+                item.remaining < 0 || item.remaining > weight) {
+              skipped++; continue;
+            }
+            items.push(item);
+            addToReorderList(item);
+            added++;
+          }
+
+          if (added) { selectedId = items.at(-1).id; save(); render(); }
+          alert(`${added} Spulen importiert.${skipped ? ` ${skipped} Zeilen übersprungen.` : ""}`);
+        } catch (error) {
+          alert(`CSV-Import fehlgeschlagen: ${error.message}`);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function exportCSV() {
+      const headers = [
+        "Marke", "Material", "Farbe", "Farbcode", "Durchmesser (mm)",
+        "Filament-Nettogewicht (g)", "Gesamtgewicht inkl. Spule (g)", "Leerspule (g)",
+        "Rest (g)", "Preis (€)", "Lagerort", "Gekauft am", "Düse (°C)", "Bett (°C)",
+        "Scan-Code", "Notizen"
+      ];
+      const keys = [
+        "brand", "material", "colorName", "colorHex", "diameter", "spoolWeight",
+        "totalWeight", "emptySpoolWeight", "remaining", "price", "location",
+        "purchased", "nozzleTemp", "bedTemp", "code", "notes"
+      ];
+      const quote = value => `"${String(value ?? "").replace(/"/g, '""')}"`;
+      const csv = "\uFEFF" + [headers, ...items.map(item => keys.map(key => item[key]))]
+        .map(row => row.map(quote).join(";")).join("\r\n");
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+      link.download = "filamente.csv";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    }
+
+    $("newBtn").addEventListener("click", () => openForm());
+    $("closeModal").addEventListener("click", closeForm);
+    $("cancelBtn").addEventListener("click", closeForm);
+    $("modalWrap").addEventListener("click", event => {
+      if (event.target === $("modalWrap")) closeForm();
+    });
+
+    $("brandSelect").addEventListener("change", () => {
+      populateMaterialSelect($("brandSelect").value);
+      populateColorSelect($("brandSelect").value, $("materialSelect").value);
+      updateRecommendedTemps();
+    });
+    $("materialSelect").addEventListener("change", () => {
+      populateColorSelect($("brandSelect").value, $("materialSelect").value);
+      updateRecommendedTemps();
+    });
+    $("colorSelect").addEventListener("change", () => {
+      const option = $("colorSelect").selectedOptions[0];
+      const custom = option?.value === "__custom__";
+      $("colorName").classList.toggle("hidden", !custom);
+      if (custom) {
+        $("colorHex").value = "#b9c2d0";
+        $("colorName").focus();
+      } else {
+        $("colorName").value = "";
+        $("colorHex").value = option?.dataset.hex || "#b9c2d0";
+      }
+    });
+
+    $("spoolWeight").addEventListener("input", updateEmptySpoolWeight);
+    $("totalWeight").addEventListener("input", updateEmptySpoolWeight);
+    $("jobSpoolSearch").addEventListener("input", renderJobSpools);
+    $("jobSpool").addEventListener("change", updateJobAvailable);
+    $("scanBtn").addEventListener("click", startCamera);
+    $("stopScanBtn").addEventListener("click", stopCamera);
+    $("search").addEventListener("input", render);
+
+    ["brandFilter", "materialFilter", "sort", "lowOnly"].forEach(id =>
+      $(id).addEventListener("change", render)
+    );
+
+    $("importBtn").addEventListener("click", () => $("csvFile").click());
+    $("csvFile").addEventListener("change", event => {
+      if (event.target.files[0]) importCSV(event.target.files[0]);
+      event.target.value = "";
+    });
+    $("exportBtn").addEventListener("click", exportCSV);
+
+    $("jobBtn").addEventListener("click", openJobForm);
+    $("closeJobModal").addEventListener("click", closeJobForm);
+    $("cancelJobBtn").addEventListener("click", closeJobForm);
+    $("jobModalWrap").addEventListener("click", event => {
+      if (event.target === $("jobModalWrap")) closeJobForm();
+    });
+
+    const savedTheme = localStorage.getItem("filament-theme");
+    document.documentElement.dataset.theme = savedTheme || "dark";
+    $("themeBtn").addEventListener("click", () => {
+      const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem("filament-theme", next);
+      document.querySelector('meta[name="theme-color"]').content =
+        next === "dark" ? "#050608" : "#f4f6fb";
+    });
+
+    if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    }
+
+    syncReorderList();
+    populateBrandSelect();
+    populateMaterialSelect($("brandSelect").value);
+    populateColorSelect($("brandSelect").value, $("materialSelect").value);
+    render();
+    setTimeout(() => $("splash").classList.add("hidden"), 650);
+  </script>
+</body>
+</html>
